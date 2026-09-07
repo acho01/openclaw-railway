@@ -1337,6 +1337,16 @@ function requireDashboardAuth(req, res, next) {
   if (!SETUP_PASSWORD) return next(); // no password configured → open
   const header = req.headers.authorization || "";
   const [scheme, encoded] = header.split(" ");
+  // Control UI HTTP API requests use the gateway token in this same header.
+  // Reject invalid tokens without a Basic challenge (which causes browser loops).
+  if (scheme.toLowerCase() === "bearer") {
+    const supplied = Buffer.from(encoded || "");
+    const expected = Buffer.from(OPENCLAW_GATEWAY_TOKEN);
+    if (supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected)) {
+      return next();
+    }
+    return res.status(401).json({ error: "Invalid gateway token" });
+  }
   if (scheme !== "Basic" || !encoded) {
     res.set("WWW-Authenticate", 'Basic realm="OpenClaw Dashboard"');
     return res.status(401).send("Auth required");
@@ -1387,6 +1397,11 @@ app.use(requireDashboardAuth, async (req, res) => {
     }
   }
 
+  // Basic credentials were checked by the wrapper. Never forward the setup
+  // password to the gateway, which expects its own bearer authentication.
+  if (/^Basic /i.test(req.headers.authorization || "")) {
+    delete req.headers.authorization;
+  }
   attachGatewayAuthHeader(req);
   return proxy.web(req, res, { target: GATEWAY_TARGET });
 });
