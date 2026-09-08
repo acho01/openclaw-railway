@@ -8,11 +8,14 @@
   "scripts": {
     "dev": "node src/server.js",
     "start": "node src/server.js",
-    "lint": "node -c src/server.js",
-    "test": "node --test",
-    "smoke": "node scripts/smoke.js"
+    "lint": "node --check src/server.js && node --check src/slack-memory.js && node --check src/slack-memory-status.js && node --check src/slack-planner-manual.js",
+    "test": "node --test test/*.test.js",
+    "smoke": "node scripts/smoke.js",
+    "slack:status": "node src/slack-memory-status.js",
+    "planner:manual": "node src/slack-planner-manual.js"
   },
   "dependencies": {
+    "@slack/socket-mode": "^2.0.7",
     "express": "^5.1.0",
     "http-proxy": "^1.18.1",
     "tar": "^7.5.4"

@@ -1,0 +1,7 @@
+.git/
+node_modules/
+.env
+.env.*
+*.sqlite*
+slack-memory-update/
+.DS_Store

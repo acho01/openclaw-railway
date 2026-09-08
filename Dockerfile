@@ -27,6 +27,9 @@ COPY src ./src
 
 # Validate the real release entry point during the image build.
 RUN node --check src/server.js \
+  && node --check src/slack-memory.js \
+  && node --check src/slack-memory-status.js \
+  && node --check src/slack-planner-manual.js \
   && node /app/openclaw.mjs --version \
   && node /app/openclaw.mjs gateway run --help
 

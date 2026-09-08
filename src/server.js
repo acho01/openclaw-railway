@@ -134,6 +134,7 @@ function isConfigured() {
   }
 })();
 
+let stopSlackMemory = null;
 let gatewayProc = null;
 let gatewayStarting = null;
 
@@ -1407,6 +1408,14 @@ app.use(requireDashboardAuth, async (req, res) => {
 });
 
 const server = app.listen(PORT, "0.0.0.0", async () => {
+  if (process.env.SLACK_MEMORY_ENABLED === "true") {
+    try {
+      const { startSlackMemory } = await import("./slack-memory.js");
+      stopSlackMemory = startSlackMemory();
+    } catch {
+      console.error("[slack-memory] could not start; check tokens, Node SQLite support and volume permissions");
+    }
+  }
   console.log(`[wrapper] listening on :${PORT}`);
   console.log(`[wrapper] state dir: ${STATE_DIR}`);
   console.log(`[wrapper] workspace dir: ${WORKSPACE_DIR}`);
@@ -1494,6 +1503,7 @@ server.on("upgrade", async (req, socket, head) => {
 });
 
 process.on("SIGTERM", () => {
+  if (stopSlackMemory) stopSlackMemory();
   // Best-effort shutdown
   try {
     if (gatewayProc) gatewayProc.kill("SIGTERM");
